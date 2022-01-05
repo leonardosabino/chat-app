@@ -3,118 +3,121 @@ import 'dart:convert';
 import 'package:app_chat/model/message.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:rounded_background_text/rounded_background_text.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(Main());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
-
-  // This widget is the root of your application.
+class Main extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Private Chat',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // Try running your application with "flutter run". You'll see the
-        // application has a blue toolbar. Then, without quitting the app, try
-        // changing the primarySwatch below to Colors.green and then invoke
-        // "hot reload" (press "r" in the console where you ran "flutter run",
-        // or simply save your changes to "hot reload" in a Flutter IDE).
-        // Notice that the counter didn't reset back to zero; the application
-        // is not restarted.
-        primarySwatch: Colors.blue,
+        primaryColor: Colors.brown[700],
+        textTheme: ThemeData.light().textTheme.copyWith(
+              headline6: const TextStyle(fontFamily: 'NerkoOne'),
+              bodyText1: const TextStyle(fontFamily: 'AmaticSC'),
+              bodyText2: const TextStyle(fontFamily: 'AmaticSC'),
+            ),
+        appBarTheme: AppBarTheme(
+          toolbarTextStyle: ThemeData.light()
+              .textTheme
+              .copyWith(
+                headline6: const TextStyle(
+                    fontFamily: 'NerkoOne', fontSize: 30, color: Colors.white),
+              )
+              .bodyText2,
+          titleTextStyle: ThemeData.light()
+              .textTheme
+              .copyWith(
+                headline6: const TextStyle(
+                    fontFamily: 'NerkoOne', fontSize: 30, color: Colors.white),
+              )
+              .headline6,
+        ),
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const HomePage(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({Key? key, required this.title}) : super(key: key);
-
-  final String title;
+class HomePage extends StatefulWidget {
+  const HomePage({Key? key}) : super(key: key);
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  _HomePageState createState() => _HomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  String? _counter;
+class _HomePageState extends State<HomePage> {
+  List<Widget> widgetsMessages = [];
 
-  Future<String> fetchMessage() async {
-    final response = await http.get(Uri.parse('https://mkul-chat-app.herokuapp.com/message'));
+  Future<List<Widget>> getMessages() async {
+    var httpResponse = await http
+        .get(Uri.parse('https://mkul-chat-app.herokuapp.com/message'));
+    String jsonResponse = utf8.decode(httpResponse.bodyBytes);
 
-    if (response.statusCode == 200) {
-      return response.body;
+    if (httpResponse.statusCode == 200) {
+      List<Widget> messages = [];
+      List<dynamic> body = jsonDecode(jsonResponse);
+      messages = List.generate(body.length, (i) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              Text(
+                body[i]['nickName'],
+              ),
+              Text(
+                body[i]['message'],
+              ),
+              const SizedBox(
+                height: 20,
+              ),
+            ],
+          ),
+        );
+      });
+      return messages;
     } else {
       throw Exception('Failed to load message');
     }
   }
 
-  void _incrementCounter() {
-    fetchMessage().then((value) => {
-          setState(() {
-            _counter = json
-                .decode(value)
-                .map((data) => Message.fromJson(data))
-                .toList()[0].message;
-          })
-        });
-  }
-
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+        title: const Text('Private Chat'),
       ),
       body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
         child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Invoke "debug painting" (press "p" in the console, choose the
-          // "Toggle Debug Paint" action from the Flutter Inspector in Android
-          // Studio, or the "Toggle Debug Paint" command in Visual Studio Code)
-          // to see the wireframe for each widget.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
+            ElevatedButton(
+              child: const Text(
+                'Refresh',
+                style: TextStyle(
+                  fontSize: 18,
+                  color: Colors.white,
+                ),
+              ),
+              onPressed: () {
+                getMessages().then((value) => {
+                      setState(() {
+                        widgetsMessages = value;
+                      })
+                    });
+              },
             ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headline4,
-            ),
+            Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: widgetsMessages,
+            )
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }
