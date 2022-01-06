@@ -1,9 +1,7 @@
 import 'dart:convert';
 
-import 'package:app_chat/model/message.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:rounded_background_text/rounded_background_text.dart';
 
 void main() {
   runApp(Main());
@@ -15,25 +13,27 @@ class Main extends StatelessWidget {
     return MaterialApp(
       title: 'Private Chat',
       theme: ThemeData(
-        primaryColor: Colors.brown[700],
+        primaryColor: Colors.grey[700],
+        backgroundColor: Colors.grey[700],
         textTheme: ThemeData.light().textTheme.copyWith(
-              headline6: const TextStyle(fontFamily: 'NerkoOne'),
-              bodyText1: const TextStyle(fontFamily: 'AmaticSC'),
-              bodyText2: const TextStyle(fontFamily: 'AmaticSC'),
+              headline6: const TextStyle(fontFamily: 'decterm'),
+              bodyText1: const TextStyle(fontFamily: 'decterm'),
+              bodyText2: const TextStyle(fontFamily: 'decterm'),
             ),
         appBarTheme: AppBarTheme(
+          backgroundColor: Colors.grey[700],
           toolbarTextStyle: ThemeData.light()
               .textTheme
               .copyWith(
                 headline6: const TextStyle(
-                    fontFamily: 'NerkoOne', fontSize: 30, color: Colors.white),
+                    fontFamily: 'decterm', fontSize: 30, color: Colors.white),
               )
               .bodyText2,
           titleTextStyle: ThemeData.light()
               .textTheme
               .copyWith(
                 headline6: const TextStyle(
-                    fontFamily: 'NerkoOne', fontSize: 30, color: Colors.white),
+                    fontFamily: 'decterm', fontSize: 30, color: Colors.white),
               )
               .headline6,
         ),
@@ -61,20 +61,31 @@ class _HomePageState extends State<HomePage> {
     if (httpResponse.statusCode == 200) {
       List<Widget> messages = [];
       List<dynamic> body = jsonDecode(jsonResponse);
+      if (body.isEmpty) {
+        return List.generate(
+            1,
+            (index) => Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Empty messages',
+                      style:
+                          TextStyle(fontSize: 50, color: Colors.grey.shade200),
+                    )
+                  ],
+                ));
+      }
       messages = List.generate(body.length, (i) {
-        return Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+        return Expanded(
+          child: Wrap(
             children: <Widget>[
-              Text(
-                body[i]['nickName'],
-              ),
-              Text(
-                body[i]['message'],
-              ),
-              const SizedBox(
-                height: 20,
-              ),
+              Text(body[i]['nickName'] + ': ',
+                  style: TextStyle(
+                      fontSize: 30,
+                      color: Colors.grey.shade200,
+                      fontWeight: FontWeight.w200)),
+              Text(body[i]['message'],
+                  style: TextStyle(fontSize: 25, color: Colors.grey.shade200)),
             ],
           ),
         );
@@ -90,6 +101,18 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Private Chat'),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endTop,
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Theme.of(context).primaryColor,
+        onPressed: () {
+          getMessages().then((value) => {
+                setState(() {
+                  widgetsMessages = value;
+                })
+              });
+        },
+        child: const Icon(Icons.refresh),
       ),
       body: Center(
         child: Column(
@@ -111,9 +134,20 @@ class _HomePageState extends State<HomePage> {
                     });
               },
             ),
-            Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: widgetsMessages,
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Container(
+                margin: const EdgeInsets.all(10.0),
+                color: Colors.grey[700],
+                height: 500.0,
+                child: SingleChildScrollView(
+                  child: Expanded(
+                    child: Wrap(
+                      children: widgetsMessages,
+                    ),
+                  ),
+                ),
+              ),
             )
           ],
         ),
