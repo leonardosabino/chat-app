@@ -76,16 +76,24 @@ class _HomePageState extends State<HomePage> {
                 ));
       }
       messages = List.generate(body.length, (i) {
-        return Expanded(
-          child: Wrap(
-            children: <Widget>[
-              Text(body[i]['nickName'] + ': ',
-                  style: TextStyle(
-                      fontSize: 30,
-                      color: Colors.grey.shade200,
-                      fontWeight: FontWeight.w200)),
-              Text(body[i]['message'],
-                  style: TextStyle(fontSize: 25, color: Colors.grey.shade200)),
+        return Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Row(
+            children: [
+              Expanded(
+                child: Wrap(
+                  children: <Widget>[
+                    Text(body[i]['nickName'] + ': ',
+                        style: TextStyle(
+                            fontSize: 30,
+                            color: Colors.grey.shade200,
+                            fontWeight: FontWeight.w200)),
+                    Text(body[i]['message'],
+                        style: TextStyle(
+                            fontSize: 25, color: Colors.grey.shade200)),
+                  ],
+                ),
+              ),
             ],
           ),
         );
