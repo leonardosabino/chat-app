@@ -1,13 +1,16 @@
 import 'dart:convert';
 
+import 'package:app_chat/model/message.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 void main() {
-  runApp(Main());
+  runApp(const Main());
 }
 
 class Main extends StatelessWidget {
+  const Main({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -52,8 +55,10 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   List<Widget> widgetsMessages = [];
+  final nickNameController = TextEditingController();
+  var _validateNickName = true;
 
-  Future<List<Widget>> getMessages() async {
+  getMessages() async {
     var httpResponse = await http
         .get(Uri.parse('https://mkul-chat-app.herokuapp.com/message'));
     String jsonResponse = utf8.decode(httpResponse.bodyBytes);
@@ -62,22 +67,25 @@ class _HomePageState extends State<HomePage> {
       List<Widget> messages = [];
       List<dynamic> body = jsonDecode(jsonResponse);
       if (body.isEmpty) {
-        return List.generate(
-            1,
-            (index) => Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      'Empty messages',
-                      style:
-                          TextStyle(fontSize: 50, color: Colors.grey.shade200),
-                    )
-                  ],
-                ));
+        setState(() {
+          widgetsMessages = List.generate(
+              1,
+              (index) => Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Empty messages',
+                        style: TextStyle(
+                            fontSize: 50, color: Colors.grey.shade200),
+                      )
+                    ],
+                  ));
+        });
+        return;
       }
       messages = List.generate(body.length, (i) {
         return Padding(
-          padding: const EdgeInsets.all(8.0),
+          padding: const EdgeInsets.all(10),
           child: Row(
             children: [
               Expanded(
@@ -98,10 +106,41 @@ class _HomePageState extends State<HomePage> {
           ),
         );
       });
-      return messages;
+      setState(() {
+        widgetsMessages = messages;
+      });
     } else {
       throw Exception('Failed to load message');
     }
+  }
+
+  sendMessage(String? message) async {
+    if (message == null) {
+      setState(() {
+        nickNameController.text.isEmpty
+            ? _validateNickName = false
+            : _validateNickName = true;
+      });
+      return;
+    }
+
+    var data = jsonEncode(<String, String>{
+      'nickName': nickNameController.text,
+      'message': message
+    });
+
+    var httpResponse = await http.post(
+      Uri.parse('https://mkul-chat-app.herokuapp.com/message'),
+      body: data,
+      headers: {"Content-Type": "application/json"},
+    );
+
+    if (httpResponse.statusCode != 200) {
+      debugPrint('Error response: $httpResponse');
+      return;
+    }
+
+    getMessages();
   }
 
   @override
@@ -114,40 +153,32 @@ class _HomePageState extends State<HomePage> {
       floatingActionButton: FloatingActionButton(
         backgroundColor: Theme.of(context).primaryColor,
         onPressed: () {
-          getMessages().then((value) => {
-                setState(() {
-                  widgetsMessages = value;
-                })
-              });
+          getMessages();
         },
         child: const Icon(Icons.refresh),
       ),
-      body: Center(
+      body: SingleChildScrollView(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            ElevatedButton(
-              child: const Text(
-                'Refresh',
-                style: TextStyle(
-                  fontSize: 18,
-                  color: Colors.white,
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: TextFormField(
+                controller: nickNameController,
+                decoration: InputDecoration(
+                  border: const UnderlineInputBorder(),
+                  labelText: 'Enter your nickname',
+                  errorText:
+                      !_validateNickName ? 'Value can\'t be empty' : null,
                 ),
               ),
-              onPressed: () {
-                getMessages().then((value) => {
-                      setState(() {
-                        widgetsMessages = value;
-                      })
-                    });
-              },
             ),
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: Container(
                 margin: const EdgeInsets.all(10.0),
                 color: Colors.grey[700],
-                height: 500.0,
+                height: 400.0,
                 child: SingleChildScrollView(
                   child: Expanded(
                     child: Wrap(
@@ -156,6 +187,18 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
               ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: TextField(
+                  keyboardType: TextInputType.multiline,
+                  maxLines: null,
+                  onSubmitted: (value) => sendMessage(value),
+                  textInputAction: TextInputAction.go,
+                  decoration: const InputDecoration(
+                    border: UnderlineInputBorder(),
+                    labelText: 'Enter your message',
+                  )),
             )
           ],
         ),
