@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:app_chat/model/message.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
@@ -56,6 +56,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   List<Widget> widgetsMessages = [];
   final nickNameController = TextEditingController();
+  final messageController = TextEditingController();
   var _validateNickName = true;
 
   getMessages() async {
@@ -115,14 +116,16 @@ class _HomePageState extends State<HomePage> {
   }
 
   sendMessage(String? message) async {
-    if (message == null) {
-      setState(() {
-        nickNameController.text.isEmpty
-            ? _validateNickName = false
-            : _validateNickName = true;
-      });
-      return;
+    setState(() {
+      nickNameController.text.isEmpty
+          ? _validateNickName = false
+          : _validateNickName = true;
+    });
+
+    if (message == null || message.isEmpty || nickNameController.text.isEmpty) {
+      throw Exception('Failed to send message');
     }
+    messageController.clear();
 
     var data = jsonEncode(<String, String>{
       'nickName': nickNameController.text,
@@ -180,6 +183,7 @@ class _HomePageState extends State<HomePage> {
                 color: Colors.grey[700],
                 height: 400.0,
                 child: SingleChildScrollView(
+                  dragStartBehavior: DragStartBehavior.down,
                   child: Expanded(
                     child: Wrap(
                       children: widgetsMessages,
@@ -191,6 +195,7 @@ class _HomePageState extends State<HomePage> {
             Padding(
               padding: const EdgeInsets.all(20),
               child: TextField(
+                  controller: messageController,
                   keyboardType: TextInputType.multiline,
                   maxLines: null,
                   onSubmitted: (value) => sendMessage(value),
