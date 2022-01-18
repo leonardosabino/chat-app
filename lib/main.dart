@@ -59,6 +59,12 @@ class _HomePageState extends State<HomePage> {
   final messageController = TextEditingController();
   var _validateNickName = true;
 
+  @override
+  void initState() {
+    super.initState();
+    getMessages();
+  }
+
   getMessages() async {
     var httpResponse = await http
         .get(Uri.parse('https://mkul-chat-app.herokuapp.com/message'));
