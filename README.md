@@ -1,6 +1,6 @@
-# app_chat
+# APP CHAT
 
-A new Flutter project.
+This is a mobile project to manage messages from [chat_api](https://github.com/leonardosabino/chat-api)
 
 ## Getting Started
 
